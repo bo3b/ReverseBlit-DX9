@@ -1252,9 +1252,17 @@ void Render()
 	if (FAILED(hr))
 		MessageBoxA(NULL, "Failed to GetDesc on Backbuffer", "GetDesc not available", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
 
-	hr = g_D3D9Device->StretchRect(backBuffer, nullptr, g_GameSurface, nullptr, D3DTEXF_LINEAR);
+	hr = NvAPI_Stereo_ReverseStereoBlitControl(g_StereoHandle, true);
 	if (FAILED(hr))
-		MessageBoxA(NULL, "Failed to StretchRect copy from Backbuffer", "StretchRect failed", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
+		MessageBoxA(NULL, "Cannot enable NvAPI_Stereo_ReverseStereoBlitControl", "NvAPI_Stereo_ReverseStereoBlitControl", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+	{
+		hr = g_D3D9Device->StretchRect(backBuffer, nullptr, g_GameSurface, nullptr, D3DTEXF_LINEAR);
+		if (FAILED(hr))
+			MessageBoxA(NULL, "Failed to StretchRect copy from Backbuffer", "StretchRect failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+	}
+	hr = NvAPI_Stereo_ReverseStereoBlitControl(g_StereoHandle, false);
+	if (FAILED(hr))
+		MessageBoxA(NULL, "Cannot disable NvAPI_Stereo_ReverseStereoBlitControl", "NvAPI_Stereo_ReverseStereoBlitControl", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
 	backBuffer->Release();
 
