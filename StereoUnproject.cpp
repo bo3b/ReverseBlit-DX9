@@ -64,6 +64,8 @@ float        g_EyeSeparation = 0;
 float        g_Separation = 0;
 float        g_Convergence = 0;
 
+IDirect3DSurface9* g_GameSurface = NULL;
+
 #ifdef D3D9
 
 nv::StereoParametersD3D9    g_StereoParamD3D9;
@@ -669,7 +671,25 @@ bool CreateWindowAndDevice()
         g_D3D9Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
         g_D3D9Device->SetRenderState(D3DRS_LIGHTING, FALSE);
         g_D3D9Device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
-    }
+
+
+		IDirect3DSurface9* backBuffer;
+		HRESULT hr = g_D3D9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+		if (FAILED(hr))
+			MessageBoxA(NULL, "Unable to GetBackBuffer", "Unable to GetBackBuffer", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+
+        D3DSURFACE_DESC bufferDesc;
+        hr = backBuffer->GetDesc(&bufferDesc);
+		if (FAILED(hr))
+			MessageBoxA(NULL, "Unable to GetDesc", "Unable to GetDesc", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+
+        hr = g_D3D9Device->CreateRenderTarget(bufferDesc.Width * 2, bufferDesc.Height, bufferDesc.Format, D3DMULTISAMPLE_NONE, 0, true,
+            &g_GameSurface, nullptr);
+		if (FAILED(hr))
+			MessageBoxA(NULL, "Unable to CreateRenderTarget", "Unable to CreateRenderTarget", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+
+		backBuffer->Release(); 
+}
 
 #else
     HRESULT hr = S_OK;
@@ -940,7 +960,12 @@ void FreeWindowAndDevice()
 {
 #ifdef D3D9
 
-    if (g_D3D9DepthBufferSurface )
+	if (g_GameSurface)
+	{
+		g_GameSurface->Release();
+		g_GameSurface = 0;
+	}
+	if (g_D3D9DepthBufferSurface)
     {
         g_D3D9DepthBufferSurface->Release();
         g_D3D9DepthBufferSurface = 0;
