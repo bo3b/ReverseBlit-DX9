@@ -1240,6 +1240,24 @@ void Render()
     g_D3D9Device->EndScene();
     g_D3D9Device->Present(NULL, NULL, NULL, NULL);
 
+
+	// Snapshot the backbuffer into our stereo RenderTarget.
+	IDirect3DSurface9* backBuffer;
+	HRESULT hr = g_D3D9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+	if (FAILED(hr))
+		MessageBoxA(NULL, "Failed to GetBackBuffer", "Backbuffer not available", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
+
+	D3DSURFACE_DESC bufferDesc, copyDesc;
+	hr = backBuffer->GetDesc(&bufferDesc);
+	if (FAILED(hr))
+		MessageBoxA(NULL, "Failed to GetDesc on Backbuffer", "GetDesc not available", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
+
+	hr = g_D3D9Device->StretchRect(backBuffer, nullptr, g_GameSurface, nullptr, D3DTEXF_LINEAR);
+	if (FAILED(hr))
+		MessageBoxA(NULL, "Failed to StretchRect copy from Backbuffer", "StretchRect failed", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
+
+	backBuffer->Release();
+
 #else
     g_D3D10Device->RSSetViewports( 1, &g_D3D10MainViewport );
 
