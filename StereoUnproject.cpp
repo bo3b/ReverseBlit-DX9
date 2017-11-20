@@ -1,6 +1,6 @@
 
-//#define D3D9
-//#define WINDOWED
+#define D3D9
+#define WINDOWED
 
 // If app hasn't choosen, set to work with Windows 98, Windows Me, Windows 2000, Windows XP and beyond
 #ifndef WINVER
