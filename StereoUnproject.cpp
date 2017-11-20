@@ -672,6 +672,14 @@ bool CreateWindowAndDevice()
         g_D3D9Device->SetRenderState(D3DRS_LIGHTING, FALSE);
         g_D3D9Device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
 
+		
+		// Create a rendertarget to copy the stereo image into, at each frame.  The documents
+		// suggest that we should use CreateOffscreenPlainSurface, but the DX9 debug layer
+		// complains that any copy to a CreateOffscreenPlainSurface must also be an CreateOffscreenPlainSurface.
+		// Backbuffers cannot be plain surfaces, so we are using RenderTarget instead, as the logical
+		// destination that is still a surface.
+		//
+		// Destination stereo copy is 2x width as specified, in order to be able to hold both eyes.
 
 		IDirect3DSurface9* backBuffer;
 		HRESULT hr = g_D3D9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
@@ -683,7 +691,7 @@ bool CreateWindowAndDevice()
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Unable to GetDesc", "Unable to GetDesc", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
-        hr = g_D3D9Device->CreateRenderTarget(bufferDesc.Width * 2, bufferDesc.Height, bufferDesc.Format, D3DMULTISAMPLE_NONE, 0, true,
+		hr = g_D3D9Device->CreateRenderTarget(bufferDesc.Width * 2, bufferDesc.Height, bufferDesc.Format, D3DMULTISAMPLE_NONE, 0, true,
             &g_GameSurface, nullptr);
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Unable to CreateRenderTarget", "Unable to CreateRenderTarget", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
@@ -1238,7 +1246,6 @@ void Render()
     }
 
     g_D3D9Device->EndScene();
-    g_D3D9Device->Present(NULL, NULL, NULL, NULL);
 
 
 	// Snapshot the backbuffer into our stereo RenderTarget.
@@ -1247,16 +1254,18 @@ void Render()
 	if (FAILED(hr))
 		MessageBoxA(NULL, "Failed to GetBackBuffer", "Backbuffer not available", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
 
-	D3DSURFACE_DESC bufferDesc, copyDesc;
+	D3DSURFACE_DESC bufferDesc;
 	hr = backBuffer->GetDesc(&bufferDesc);
 	if (FAILED(hr))
-		MessageBoxA(NULL, "Failed to GetDesc on Backbuffer", "GetDesc not available", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
+		MessageBoxA(NULL, "Failed to GetDesc on Backbuffer", "GetDesc not available", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
 	hr = NvAPI_Stereo_ReverseStereoBlitControl(g_StereoHandle, true);
 	if (FAILED(hr))
 		MessageBoxA(NULL, "Cannot enable NvAPI_Stereo_ReverseStereoBlitControl", "NvAPI_Stereo_ReverseStereoBlitControl", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 	{
-		hr = g_D3D9Device->StretchRect(backBuffer, nullptr, g_GameSurface, nullptr, D3DTEXF_LINEAR);
+		RECT backBufferRect = { 0, 0, bufferDesc.Width, bufferDesc.Height };
+		RECT stereoImageRect = { 0, 0, bufferDesc.Width * 2, bufferDesc.Height };
+		hr = g_D3D9Device->StretchRect(backBuffer, &backBufferRect, g_GameSurface, &stereoImageRect, D3DTEXF_LINEAR);
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Failed to StretchRect copy from Backbuffer", "StretchRect failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 	}
@@ -1265,6 +1274,8 @@ void Render()
 		MessageBoxA(NULL, "Cannot disable NvAPI_Stereo_ReverseStereoBlitControl", "NvAPI_Stereo_ReverseStereoBlitControl", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
 	backBuffer->Release();
+
+	g_D3D9Device->Present(NULL, NULL, NULL, NULL);
 
 #else
     g_D3D10Device->RSSetViewports( 1, &g_D3D10MainViewport );
