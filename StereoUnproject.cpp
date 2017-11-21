@@ -64,7 +64,9 @@ float        g_EyeSeparation = 0;
 float        g_Separation = 0;
 float        g_Convergence = 0;
 
-IDirect3DSurface9* g_GameSurface = NULL;
+IDirect3DTexture9* g_GameSurface = NULL;
+IDirect3DSurface9* g_TexSurface = NULL;
+
 
 #ifdef D3D9
 
@@ -691,8 +693,11 @@ bool CreateWindowAndDevice()
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Unable to GetDesc", "Unable to GetDesc", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
-		hr = g_D3D9Device->CreateRenderTarget(bufferDesc.Width * 2, bufferDesc.Height, bufferDesc.Format, D3DMULTISAMPLE_NONE, 0, true,
-            &g_GameSurface, nullptr);
+		hr = g_D3D9Device->CreateTexture(bufferDesc.Width * 2, bufferDesc.Height, 0, D3DUSAGE_RENDERTARGET,  bufferDesc.Format, D3DPOOL_DEFAULT,
+			&g_GameSurface, nullptr);
+		g_GameSurface->GetSurfaceLevel(0, &g_TexSurface);
+		//hr = g_D3D9Device->CreateRenderTarget(bufferDesc.Width * 2, bufferDesc.Height, bufferDesc.Format, D3DMULTISAMPLE_NONE, 0, true,
+		//	&g_GameSurface, nullptr);
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Unable to CreateRenderTarget", "Unable to CreateRenderTarget", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 
@@ -967,7 +972,12 @@ bool CreateWindowAndDevice()
 void FreeWindowAndDevice()
 {
 #ifdef D3D9
-
+	
+	if (g_TexSurface)
+	{
+		g_TexSurface->Release();
+		g_TexSurface = 0;
+	}
 	if (g_GameSurface)
 	{
 		g_GameSurface->Release();
@@ -1265,7 +1275,7 @@ void Render()
 	{
 		RECT backBufferRect = { 0, 0, bufferDesc.Width, bufferDesc.Height };
 		RECT stereoImageRect = { 0, 0, bufferDesc.Width * 2, bufferDesc.Height };
-		hr = g_D3D9Device->StretchRect(backBuffer, &backBufferRect, g_GameSurface, &stereoImageRect, D3DTEXF_LINEAR);
+		hr = g_D3D9Device->StretchRect(backBuffer, &backBufferRect, g_TexSurface, &stereoImageRect, D3DTEXF_LINEAR);
 		if (FAILED(hr))
 			MessageBoxA(NULL, "Failed to StretchRect copy from Backbuffer", "StretchRect failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
 	}
