@@ -64,9 +64,9 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{															\
 		HRESULT hr = (x);										\
 		if(FAILED(hr))											\
-				{														\
+		{														\
 			DXTrace(__FILE__, (DWORD)__LINE__, hr, L#x, true);	\
-				}														\
+		}														\
 	}
 
 
@@ -1290,7 +1290,7 @@ void Render()
 
 		HR(NvAPI_Stereo_ReverseStereoBlitControl(g_StereoHandle, true));
 		{
-			HR(g_D3D9Device->StretchRect(backBuffer, &backBufferRect, g_TexSurface, &stereoImageRect, D3DTEXF_LINEAR));
+			HR(g_D3D9Device->StretchRect(backBuffer, nullptr, g_TexSurface, nullptr, D3DTEXF_NONE));
 		}
 		HR(NvAPI_Stereo_ReverseStereoBlitControl(g_StereoHandle, false));
 
@@ -1300,7 +1300,7 @@ void Render()
 		int insetW = 300;
 		int insetH = 300.0 * stereoImageRect.bottom / stereoImageRect.right;
 		RECT topScreen = { 5, 5, insetW, insetH };
-		HR(g_D3D9Device->StretchRect(g_TexSurface, &stereoImageRect, backBuffer, &topScreen, D3DTEXF_LINEAR));
+		HR(g_D3D9Device->StretchRect(g_TexSurface, &stereoImageRect, backBuffer, &topScreen, D3DTEXF_NONE));
 	}
 	backBuffer->Release();
 
